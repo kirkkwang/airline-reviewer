@@ -408,3 +408,26 @@ see `app/javascript/components/Airlines/Airlines.js`
 ```shell
 touch app/javascript/components/Airlines/AirlineCard.js
 ```
+
+#### Add styled-components
+
+Add styled-components and import into `Airlines.js` and `AirlineCard.js`
+
+```shell
+yarn add styled-components
+```
+
+```javascript
+// Airlines.js, AirlineCard.js
+import styled from "styled-components";
+```
+
+#### Fix blank page when navigating back from a show page
+
+- Remove all turbolinks `, 'data-turbolinks-track': 'reload'` from `app/views/layouts/application.html.erb`
+- Comment out `import Turbolinks from "turbolinks"` from `app/javascript/packs/application.js`
+- Comment out `gem 'turbolinks', '~> 5'` from `Gemfile`
+- Stop server
+- `bundle install`
+- `rails s`
+- On a separate terminal tab, start webpack dev server, `./bin/webpack-dev-server`
