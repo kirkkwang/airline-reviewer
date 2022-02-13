@@ -1,4 +1,5 @@
 ## Backend
+
 ### App set up
 
 ```shell
@@ -318,15 +319,87 @@ Send POST request to 'http://localhost:3000/api/v1/reviews', with a JSON payload
   "airline_id": 1
 }
 ```
+
 Send DELETE request to 'http://localhost:3000/api/v1/reviews/3', should see no body returned
 
 ## Frontend
 
-###  Render view through React
+### Render view through React
 
 ```shell
 mkdir app/views/pages
+mkdir app/javascript/components
+mkdir app/javascript/components/Airlines
+touch app/javascript/components/Airlines/Airlines.js
+mkdir app/javascript/components/Airline
+touch app/javascript/components/Airline/Airline.js
+touch app/javascript/components/App.js
 touch app/views/pages/index.html.erb
+mv app/javascript/packs/hello_react.jsx app/javascript/packs/index.jsx
+yarn add react-router-dom@5.3.0
 ```
+
 copy and paste
-`<%= javascript_pack_tag 'hello_react' %>`
+`<%= javascript_pack_tag 'index' %>`
+
+#### Turning off/on rack-mini-profiler (thing in top left corner)
+
+add `?pp=disable` at the end of URL to disable, `?pp=enable` to enable, `?pp=help` for more options (when enabled)
+
+#### App.js
+
+```javascript
+// App.js
+import React, { Component } from "react";
+
+export default class App extends Component {
+  render() {
+    return <>Hello World!</>;
+  }
+}
+```
+
+```javascript
+// index.jsx
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "../components/App";
+import { BrowserRouter as Router, Route } from "react-router-dom";
+
+document.addEventListener("DOMContentLoaded", () => {
+  ReactDOM.render(
+    <Router>
+      <Route path="/" component={App} />
+    </Router>,
+    document.body.appendChild(document.createElement("div"))
+  );
+});
+```
+
+```javascript
+// App.js
+import React, { Component } from "react";
+import { Route, Switch } from "react-router-dom";
+import Airlines from "./Airlines/Airlines";
+import Airline from "./Airline/Airline";
+
+export default class App extends Component {
+  render() {
+    return (
+      <Switch>
+        <Route exact path="/" component={Airlines} />
+        <Route exact path="/airlines/:slug" component={Airline} />
+      </Switch>
+    );
+  }
+}
+```
+
+### Setting up the components
+
+see `app/javascript/components/Airlines/Airlines.js`
+
+#### Add a new component to display grids of airlines
+
+```shell
+touch app/javascript/components/Airlines/Airline.js
