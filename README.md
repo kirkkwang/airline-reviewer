@@ -47,6 +47,9 @@ class Airline < ApplicationRecord
 
 # get average score of reviews for airline
   def avg_score
+  # guard return for if there are no reviews
+    return 0 unless reviews.count.positive?
+
     reviews.average(:score).round(2).to_f
   end
 end
@@ -125,9 +128,10 @@ spring stop
 ```ruby
 # app/serializers/airline_serializer.rb
 # add has_many relation
+# added `:avg_score` to be referenced by frontend component later
 class AirlineSerializer
   include FastJsonapi::ObjectSerializer
-  attributes :name, :image_url, :slug
+  attributes :name, :image_url, :slug, :avg_score
 
   has_many :reviews
 end
@@ -402,4 +406,5 @@ see `app/javascript/components/Airlines/Airlines.js`
 #### Add a new component to display grids of airlines
 
 ```shell
-touch app/javascript/components/Airlines/Airline.js
+touch app/javascript/components/Airlines/AirlineCard.js
+```
