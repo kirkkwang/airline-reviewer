@@ -1,10 +1,11 @@
+## Backend
 ### App set up
 
 ```shell
-$ rails new open-flights --webpack=react --database=postgresql -T
+rails new open-flights --webpack=react --database=postgresql -T
 
-$ cd open-flights
-$ rails db:create
+cd open-flights
+rails db:create
 ```
 
 ### Database set up
@@ -15,14 +16,14 @@ $ rails db:create
 # default wil be string if not specified
 # slug is a unique identifier for each airline
 
-$ rails g model Airline name image_url slug
+rails g model Airline name image_url slug
 
 # add data type when not using default string
 # add belongs_to directly to set up foreign key
 
-$ rails g model Review title description score:integer airline:belongs_to
+rails g model Review title description score:integer airline:belongs_to
 
-$ rails db:migrate
+rails db:migrate
 ```
 
 #### Setting up model
@@ -97,7 +98,7 @@ reviews = Review.create({
 ```
 
 ```shell
-$ rails db:seed
+rails db:seed
 ```
 
 ### API set up
@@ -109,15 +110,15 @@ Gem by team at Netflix, similar to ActiveModelSerializers
 add `gem 'fast_jsonapi'` to `Gemfile`
 
 ```shell
-$ bundle install
+bundle install
 
-$ rails g serializer Airline name image_url slug
+rails g serializer Airline name image_url slug
 
-$ rails g serializer Review title description score airline_id
+rails g serializer Review title description score airline_id
 
 # restart rails console if active
 # might needs to stop the spring Rails application preloader as well
-$ spring stop
+spring stop
 ```
 
 ```ruby
@@ -151,6 +152,181 @@ Rails.application.routes.draw do
   end
 # route all requests that are not in pre-existing in API back to index path
 # improves deconflicting of react routes and rails routes
-  get '*path', to: 'pages#index' via: :all
+  get '*path', to: 'pages#index', via: :all
 end
 ```
+
+#### Create controllers
+
+Manually create a pages_controller.rb because of the routes.rb set up, rails g won't work
+
+```shell
+touch app/controllers/pages_controller.rb
+mkdir app/controllers/api
+mkdir app/controllers/api/v1
+touch app/controllers/api/v1/airlines_controller.rb
+touch app/controllers/api/v1/reviews_controller.rb
+```
+
+```ruby
+# pages_controller.rb
+class PagesController < ApplicationController
+  def index
+  end
+end
+```
+
+```ruby
+# airlines_controller.rb
+# name space inside module that corresponds with the namespaces in routes
+module Api
+  module V1
+    class AirlinesController < ApplicationController
+      def index
+        airlines = Airline.all
+
+      # render data with AirlineSerializer
+        render json: AirlineSerializer.new(airlines, options).serialized_json
+      end
+
+      def show
+      # find airline based off the slug parameter as specified in routes.rb
+        airline = Airline.find_by(slug: params[:slug])
+
+        render json: AirlineSerializer.new(airline, options).serialized_json
+      end
+
+      def create
+
+      # add strong params, create private airline_params method below
+        airline = Airline.new(airline_params)
+
+        if airline.save
+          render json: AirlineSerializer.new(airline).serialized_json
+        else
+          render json: { error: airline.errors.messages }, status: 422
+        end
+      end
+
+      def update
+      # find the existing airline by it's slug
+        airline = Airline.find_by(slug: params[:slug])
+
+        if airline.update(airline_params)
+          render json: AirlineSerializer.new(airline, options).serialized_json
+        else
+          render json: { error: airline.errors.message }, status: 422
+        end
+      end
+
+      def destroy
+        airline = Airline.find_by(slug: params[:slug])
+
+        if airline.destroy
+          head :no_content
+        else
+          render json: { error: airline.errors.messages }, status: 422
+        end
+      end
+
+      private
+
+      def airline_params
+        params.require(:airline).permit(:name, :img_url)
+      end
+
+    # when rendering data from AirlineSerializer, adds any associated Reviews data in the JSON payload
+    # with Fast API, structure data as a compound document
+    # when AirlineSerializer gets initialized, have an optiont to pass in the options hash to specify any additional resources to be included
+      def options
+      # or - equal operator, if @options is true, it will equal @options, if false, it will equal { include: %i[reviews] }
+        @options ||= { include: %i[reviews]}
+      end
+    end
+  end
+end
+```
+
+```ruby
+# reviews_controller.rb
+module Api
+  module V1
+    class ReviewsController < ApplicationController
+      def create
+        review = Review.new(review_params)
+
+        if review.save
+          render json: ReviewSerializer.new(review).serialized_json
+        else
+          render json: { error: review.errors.messages }, status: 422
+        end
+      end
+
+      def destroy
+        review = Review.find(params[:id])
+
+        if review.destroy
+          head :no_content
+        else
+          render json: { error: review.errors.messages }, status:  422
+        end
+      end
+
+      private
+
+      def review_params
+        params.require(:review).permit(:title, :description, :score, :airline_id)
+      end
+    end
+  end
+end
+```
+
+#### Testing API
+
+Send GET request to `http://localhost:3000/api/v1/airlines`, should see JSON of data
+
+Send GET request to `http://localhost:3000/api/v1/airlines/united-airlines`, using the slug, should see JSon of a single airline (United Airlines)
+
+Before making POST request, add `protect_from_forgery with: :null_session` into the `airlines_controller.rb` and `reviews_controllers.rb` to avoid AuthenticityToken error
+
+Send POST request to 'http://localhost:3000/api/v1/airlines`, with a JSON payload
+
+```json
+{
+  "name": "fake airline"
+}
+```
+
+Send PATCH request to 'http://localhost:3000/api/v1/fake-airline, with a JSON payload
+
+```json
+{
+  "name": "other fake airline"
+}
+```
+
+Send DELETE request to 'http://localhost:3000/api/v1/airlines/fake-airline', should see no body returned
+
+Send POST request to 'http://localhost:3000/api/v1/reviews', with a JSON payload
+
+```json
+{
+  "title": "Great experience!",
+  "description": "had a great time!",
+  "score": 4,
+  "airline_id": 1
+}
+```
+Send DELETE request to 'http://localhost:3000/api/v1/reviews/3', should see no body returned
+
+## Frontend
+
+###  Render view through React
+
+```shell
+mkdir app/views/pages
+touch app/views/pages/index.html.erb
+```
+copy and paste
+`<%= javascript_pack_tag 'hello_react' %>`
