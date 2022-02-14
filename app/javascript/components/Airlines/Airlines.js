@@ -42,7 +42,7 @@ export default class Airlines extends Component {
     fetch("/api/v1/airlines.json")
       .then((resp) => resp.json())
       .then((airlinesArray) => this.setState({ airlines: airlinesArray.data }))
-      .catch((errors) => console.log("Airline read errors:", errors));
+      .catch((errors) => console.log("Airlines read errors:", errors));
   };
 
   render() {
